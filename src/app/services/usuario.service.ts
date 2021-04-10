@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Storage } from '@ionic/storage';
 import { environment } from '../../environments/environment';
-import { Usuario } from '../interfaces/interfaces';
+import { Usuario, Respuesta } from '../interfaces/interfaces';
 import { NavController } from '@ionic/angular';
 
 const URL = environment.url;
@@ -13,32 +13,45 @@ const URL = environment.url;
 export class UsuarioService {
 
  token: string = null;
- private usuario: Usuario = {};
+ private usuario: Usuario = { estado:false, google:false };
+ private respuesta: Respuesta = { ok:false, msg: '' };
 
   constructor( private http: HttpClient,
                private storage: Storage,
                private navCtrl: NavController ) { }
 
 
-  login( email: string, password: string ) {
+  login( correo: string, password: string ) {
 
-    const data = { email, password };
-
+    const data = { correo, password };
+    
     return new Promise( resolve => {
 
-      this.http.post(`${ URL }/user/login`, data )
-        .subscribe( async resp => {
-          console.log(resp);
+      const headers = new HttpHeaders({
+        'Content-Type': 'application/json'
+      });
 
-          if ( resp['ok'] ) {
+      this.http.post(`${ URL }/api/auth/login`, data, { headers } )
+        .subscribe( async resp => {
+          this.respuesta.ok = resp['ok'];
+          this.respuesta.msg = resp['msg'];
+          if ( this.respuesta.ok ) {
             await this.guardarToken( resp['token'] );
-            resolve(true);
+            resolve(this.respuesta);
           } else {
             this.token = null;
             this.storage.clear();
-            resolve(false);
+            resolve(this.respuesta);
           }
 
+        },
+        ( errResp: HttpErrorResponse ) => {
+            console.log(errResp.error);
+            this.token = null;
+            this.storage.clear();
+            this.respuesta.ok = errResp.error.ok;
+            this.respuesta.msg = errResp.error.msg;
+            resolve(this.respuesta);
         });
 
     });
@@ -56,19 +69,30 @@ export class UsuarioService {
 
     return new Promise( resolve => {
 
-      this.http.post(`${ URL }/user/create`, usuario )
+      this.http.post(`${ URL }/api/usuarios`, usuario )
           .subscribe( async resp => {
-            console.log(resp);
-
             if ( resp['ok'] ) {
+              this.respuesta.ok = resp['ok'];
+              this.respuesta.msg = 'Usuario creado';
               await this.guardarToken( resp['token'] );
-              resolve(true);
+              resolve(this.respuesta);
             } else {
+              this.respuesta.ok = resp['ok'];
+              this.respuesta.msg = resp['msg'];
               this.token = null;
               this.storage.clear();
-              resolve(false);
+              resolve(this.respuesta);
             }
 
+          },
+          ( errResp : HttpErrorResponse ) => {
+            
+            this.respuesta.ok = errResp.error.errors[0].ok;
+            this.respuesta.msg = errResp.error.errors[0].msg;
+            this.token = null;
+            this.storage.clear();
+            console.log(this.respuesta);
+            resolve(this.respuesta);
           });
 
 
@@ -79,7 +103,7 @@ export class UsuarioService {
 
   getUsuario() {
 
-    if ( !this.usuario._id ) {
+    if ( !this.usuario.uid ) {
       this.validaToken();
     }
 
@@ -118,10 +142,11 @@ export class UsuarioService {
     return new Promise<boolean>( resolve => {
 
       const headers = new HttpHeaders({
+        'Content-Type': 'application/json',
         'x-token': this.token
       });
 
-      this.http.get(`${ URL }/user/`, { headers })
+      this.http.get(`${ URL }/api/auth/login`, { headers })
         .subscribe( resp => {
 
           if ( resp['ok'] ) {
@@ -150,7 +175,7 @@ export class UsuarioService {
 
     return new Promise( resolve => {
 
-      this.http.post(`${ URL }/user/update`, usuario, { headers })
+      this.http.post(`${ URL }/api/usuarios/`, usuario, { headers })
         .subscribe( resp => {
 
           if ( resp['ok'] ) {

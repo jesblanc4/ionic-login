@@ -1,3 +1,4 @@
+import { FileTransferObject } from '@ionic-native/file-transfer/ngx';
 
 export interface RespuestaPosts {
   ok: boolean;
@@ -15,10 +16,18 @@ export interface Post {
 }
 
 export interface Usuario {
-  avatar?: string;
-  _id?: string;
+  rol?: string;
+  estado: boolean;
+  google: boolean;
   nombre?: string;
-  email?: string;
+  correo?: string;
+  uid?: string;
   password?: string;
+  avatar?: string;
+}
+
+export interface Respuesta {
+  ok?: boolean;
+  msg?: string;
 }
 

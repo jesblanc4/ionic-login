@@ -3,7 +3,7 @@ import { NgForm } from '@angular/forms';
 import { IonSlides, NavController } from '@ionic/angular';
 import { UsuarioService } from '../../services/usuario.service';
 import { UiServiceService } from 'src/app/services/ui-service.service';
-import { Usuario } from '../../interfaces/interfaces';
+import { Usuario, Respuesta } from '../../interfaces/interfaces';
 
 @Component({
   selector: 'app-login',
@@ -15,12 +15,15 @@ export class LoginPage implements OnInit {
   @ViewChild('slidePrincipal') slides: IonSlides;
 
   loginUser = {
-    email: 'test1@test.com',
+    correo: 'test1@test.com',
     password: '123456'
   };
 
   registerUser: Usuario = {
-    email: 'test',
+    rol: 'USER_ROLE',
+    estado: true,
+    google: false,
+    correo: 'test',
     password: '123456',
     nombre: 'Test',
     avatar: 'av-1.png'
@@ -39,14 +42,14 @@ export class LoginPage implements OnInit {
 
     if ( fLogin.invalid ) { return; }
 
-    const valido = await this.usuarioService.login( this.loginUser.email, this.loginUser.password );
+    const valido:Respuesta = await this.usuarioService.login( this.loginUser.correo, this.loginUser.password );
 
-    if ( valido ) {
+    if ( valido.ok ) {
       // navegar al tabs
       this.navCtrl.navigateRoot( '/main/tabs/tab1', { animated: true } );
     } else {
       // mostrar alerta de usuario y contraseña no correctos
-      this.uiService.alertaInformativa('Usuario y contraseña no son correctos.');
+      this.uiService.alertaInformativa(valido.msg);
     }
 
 
@@ -56,14 +59,14 @@ export class LoginPage implements OnInit {
 
     if ( fRegistro.invalid ) { return; }
 
-    const valido = await this.usuarioService.registro( this.registerUser );
+    const valido : Respuesta = await this.usuarioService.registro( this.registerUser );
 
-    if ( valido ) {
+    if ( valido.ok ) {
       // navegar al tabs
       this.navCtrl.navigateRoot( '/main/tabs/tab1', { animated: true } );
     } else {
       // mostrar alerta de usuario y contraseña no correctos
-      this.uiService.alertaInformativa('Ese correo electrónico ya existe.');
+      this.uiService.alertaInformativa(valido.msg);
     }
 
 

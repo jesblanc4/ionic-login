@@ -1,0 +1,8 @@
+
+reintalar node_modules
+
+Se detento problema en node-sass
+
+Se soluciono instalando node-sass 4.14.1
+
+npm install --save-dev node-sass@4.14.1
